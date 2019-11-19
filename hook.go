@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"	
-	"os"
-	"os/signal"
-	"os/exec"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"os/signal"
+	"strings"
 )
 
 // ServerConfig configuration
@@ -17,8 +19,8 @@ type ServerConfig struct {
 	Addr string
 }
 
-// DeplomentMessage returned to the user
-type DeplomentMessage struct {
+// DeploymentMessage returned to the user
+type DeploymentMessage struct {
 	Status string `json:"status"`
 	Message string	`json:"message"` 
 }
@@ -42,28 +44,63 @@ func HookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("body: %s", body)
+	data, err := url.QueryUnescape(string(body))
 
-	status := "success";
-	// Execute deployment script via ansible
-	cmd := exec.Command("./deploy.sh")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	log.Printf("body: %s", data)
+	status := "success"
+	name  := "" // repository name
+	ref  := "" // The full git ref that was pushed. Example: refs/heads/master.
+	commit := ""  // The SHA of the most recent commit on ref after the push.
+
+	// determine source
+	if strings.Index(data, "api.github.com") > -1 {
+		log.Printf("Github payload recived")
+		val, err := url.ParseQuery(data)
+		if err!=nil {
+			log.Fatal(err)
+		}
+		payloadJson := val.Get("payload")
+		var pushEvent PushEventPayloadGithub
+		if err := json.Unmarshal([]byte(payloadJson), &pushEvent); err != nil {
+			log.Printf("Error decoding body %v", err)
+			if e, ok := err.(*json.SyntaxError); ok {
+				log.Printf("syntax error at byte offset %d", e.Offset)
+			}
+			log.Fatal(err)
+		}
+
+		name = pushEvent.Repository.Name
+		ref = pushEvent.Ref
+		commit = pushEvent.After
+	}
+
+	log.Printf("name : %s", name)
+	log.Printf("ref : %s", ref)
+	log.Printf("commit : %s", commit)
+
+	// Execute deployment script
+	cmd := exec.Command("./deploy.sh", name, ref, commit)
 	log.Printf("Running deployment and waiting for it to finish...")
-	payload, err := cmd.Output();
+	payload, err := cmd.Output()
 
 	if err != nil {
 		log.Printf("Command finished with error: %v", err)
-		status = "error"	
+		status = "error"
 	}
 
 	log.Printf("Command finished with \n------------------------------\n %s \n------------------------------", payload)
-	bytes, err := json.Marshal(DeplomentMessage {
+	bytes, err := json.Marshal(DeploymentMessage {
 		Status : status,
 		Message : string(payload),
 	})
 	
 	if err != nil {
 		log.Fatal(err)
-		panic(err)
 	}
 
 	log.Printf("Payload > %s", string(bytes))
@@ -97,7 +134,7 @@ func main() {
 	conf := ServerConfig{Addr: port} // *":8080"
 	srv := StartHTTPServer(&conf)
 
-	// sigal capture
+	// signal capture
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
 

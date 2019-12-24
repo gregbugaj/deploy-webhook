@@ -1,0 +1,22 @@
+[Unit]  
+Description=deploy-webhook service
+After=network.target
+  
+[Service]  
+ExecStart=/usr/bin/go webhook.go
+WorkingDirectory=/etc/deploy-webhook
+User=app-svc  
+Group=app-svc
+
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+
+SyslogIdentifier=deploy-webhook-service  
+PrivateTmp=true  
+
+Environment=APP_PARAM_1=Production
+Environment=APP_PARAM_2=false
+
+[Install]  
+WantedBy=multi-user.target  

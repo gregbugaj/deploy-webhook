@@ -23,9 +23,11 @@ echo "Ref    : $2"
 echo "Commit : $3"
 
 dir=~/dev/deployment-scripts
+
 deploydir="$dir/$1"
 
 echo "Script directory"
 echo $deploydir
 # run under app-svc user
 sudo -u app-svc -- ansible-playbook $deploydir/playbook.yml --inventory $deploydir/inventory/prod/prod.yml
+#sudo -u app-svc -- ansible-playbook playbook.yml --inventory ./inventory/prod/prod.yml

@@ -152,7 +152,7 @@ func HookHandler(w http.ResponseWriter, r *http.Request) {
 
 	tic := nowAsUnixMilliseconds()
 	// Execute deployment script
-	cmd := exec.Command("./deploy.sh", name, ref, commit)
+	cmd := exec.Command("/etc/deploy-webhook/deploy.sh", name, ref, commit)
 	log.Printf("Running deployment and waiting for it to finish...")
 	payload, err := cmd.Output()
 

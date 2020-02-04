@@ -3,7 +3,7 @@ Description=deploy-webhook service
 After=network.target
   
 [Service]  
-ExecStart=/usr/bin/go webhook.go
+ExecStart=deploy-webhook 0.0.0.0:8787
 WorkingDirectory=/etc/deploy-webhook
 User=app-svc  
 Group=app-svc

@@ -22,7 +22,7 @@ echo "Name   : $1"
 echo "Ref    : $2"
 echo "Commit : $3"
 
-dir=~/dev/deployment-scripts
+dir=/etc/deploy-webhook/deployment-scripts
 
 deploydir="$dir/$1"
 

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// startup up time
+// startup up time in millis
 var startTime string
 
 // ServerConfig configuration

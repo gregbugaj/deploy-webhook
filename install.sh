@@ -1,4 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+echo 'Installing deploy-webhook'
+if  [ $(id -u) = 0 ]; then
+   echo "This script must not be run as root, run under 'app-svc' account."
+   exit 1
+fi
+
 
 echo 'Stopping existing service'
 sudo systemctl stop deploy-webhook.service
@@ -27,4 +34,3 @@ echo 'Service status: sudo systemctl status deploy-webhook.service'
 echo 'Starting services'
 sudo systemctl start deploy-webhook.service
 sudo systemctl status deploy-webhook.service
-
